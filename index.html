@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>探险家打卡岛 · 每日任务闯关</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; background: linear-gradient(180deg,#7ed0ff 0%,#a8e6ff 40%,#d9f6e8 100%); min-height: 100vh; padding-bottom: 90px; }
+  .app { max-width: 640px; margin: 0 auto; padding: 14px; }
+
+  /* 顶部 */
+  .hero { background: linear-gradient(135deg,#ff9a56,#ff6b9d 60%,#8f6bff); border-radius: 22px; padding: 18px 20px; color:#fff; box-shadow: 0 8px 20px rgba(80,60,150,.25); position: relative; overflow: hidden; }
+  .hero::after { content:"⛵"; position:absolute; right:14px; top:10px; font-size:44px; opacity:.85; }
+  .hero h1 { font-size: 1.25rem; letter-spacing:.05em; }
+  .hero .help { position:absolute; right:14px; bottom:12px; font-size:1.1rem; background:rgba(255,255,255,.25); border:none; color:#fff; width:34px; height:34px; border-radius:50%; cursor:pointer; font-weight:800; }
+  .hero .sub { font-size:.8rem; opacity:.9; margin-top:2px; max-width:75%; }
+  .kids { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .kidchip { border:none; background:rgba(255,255,255,.22); color:#fff; border-radius:14px; padding:5px 12px; font-size:.82rem; font-weight:700; cursor:pointer; }
+  .kidchip.on { background:#fff; color:#d63384; }
+  .stats { display:flex; gap:10px; margin-top:12px; }
+  .stat { flex:1; background:rgba(255,255,255,.22); border-radius:14px; padding:8px 6px; text-align:center; backdrop-filter: blur(2px); }
+  .stat .num { font-size:1.35rem; font-weight:800; }
+  .stat .lbl { font-size:.72rem; opacity:.95; }
+  .lvwrap { margin-top:12px; background:rgba(255,255,255,.18); border-radius:12px; padding:8px 12px; }
+  .lvrow { display:flex; justify-content:space-between; font-size:.8rem; font-weight:700; }
+  .bar { height:10px; background:rgba(255,255,255,.35); border-radius:6px; margin-top:5px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:linear-gradient(90deg,#ffe259,#ffa751); border-radius:6px; transition:width .5s; }
+
+  /* 页签 */
+  .tabs { display:flex; gap:6px; margin:14px 0; position:sticky; top:8px; z-index:20; }
+  .tab { flex:1; border:none; border-radius:14px; padding:10px 4px; font-size:.9rem; font-weight:700; color:#4a3b6b; background:#ffffffcc; cursor:pointer; box-shadow:0 3px 8px rgba(60,80,150,.12); }
+  .tab.on { background:#4f46e5; color:#fff; }
+
+  /* 今日打卡 */
+  .dateband { text-align:center; font-size:.95rem; font-weight:700; color:#2b4a7a; margin:4px 0 10px; }
+  .task { background:#fff; border-radius:18px; padding:13px 14px; margin-bottom:10px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 12px rgba(60,90,150,.10); cursor:pointer; transition:transform .12s, background .3s; border:2px solid transparent; }
+  .task:active { transform:scale(.98); }
+  .task.done { background:#e8fbee; border-color:#3ec97e; }
+  .task .ico { font-size:1.9rem; }
+  .task .info { flex:1; min-width:0; }
+  .task .name { font-size:1rem; font-weight:700; color:#333; }
+  .task .meta { font-size:.75rem; color:#8a93a6; margin-top:2px; }
+  .task.done .name { color:#1d9a5b; }
+  .task .pts { background:#fff3c9; color:#b07a00; font-weight:800; font-size:.85rem; border-radius:12px; padding:5px 10px; white-space:nowrap; }
+  .task.done .pts { background:#c9f5dd; color:#0e7a44; }
+  .task .rulebtn { border:none; background:#eef1f7; border-radius:50%; width:26px; height:26px; font-size:.8rem; font-weight:800; color:#556; cursor:pointer; flex:none; }
+  .check { width:30px; height:30px; border-radius:50%; border:3px solid #cfd8e8; display:flex; align-items:center; justify-content:center; font-size:1rem; color:#fff; flex:none; }
+  .task.done .check { background:#3ec97e; border-color:#3ec97e; }
+  .rulebox { background:#fffbe8; border:1px dashed #e0c96a; border-radius:12px; padding:9px 12px; font-size:.78rem; color:#6b5e2a; margin:-4px 0 10px; line-height:1.6; }
+  .rulebox b { color:#a3690b; }
+  .alleffect { text-align:center; font-size:1.05rem; font-weight:800; color:#e2582b; padding:8px 0; min-height:30px; }
+
+  /* 徽章 */
+  .badges { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .badge { background:#fff; border-radius:16px; padding:14px 6px; text-align:center; box-shadow:0 4px 12px rgba(60,90,150,.10); }
+  .badge.locked { opacity:.38; filter:grayscale(1); }
+  .badge .bico { font-size:2.1rem; }
+  .badge .bname { font-size:.8rem; font-weight:800; color:#444; margin-top:4px; }
+  .badge .bcond { font-size:.68rem; color:#98a1b3; margin-top:2px; }
+
+  /* 商店 */
+  .shopitem { background:#fff; border-radius:16px; padding:12px 14px; margin-bottom:10px; display:flex; align-items:center; gap:10px; box-shadow:0 4px 12px rgba(60,90,150,.10); }
+  .shopitem .sico { font-size:1.8rem; }
+  .shopitem .sinfo { flex:1; }
+  .shopitem .sname { font-weight:800; color:#333; font-size:.95rem; }
+  .shopitem .scost { font-size:.75rem; color:#b07a00; font-weight:700; }
+  .btn { border:none; border-radius:12px; padding:9px 16px; font-weight:800; cursor:pointer; font-size:.85rem; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-buy { background:#ff8f3c; color:#fff; }
+  .btn-ok { background:#3ec97e; color:#fff; }
+  .btn-ghost { background:#eef1f7; color:#556; }
+  .btn-danger { background:#ffe3e3; color:#c0392b; }
+  .btn-blue { background:#4f46e5; color:#fff; }
+
+  /* 历史 */
+  .heatmap { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; background:#fff; border-radius:16px; padding:12px; box-shadow:0 4px 12px rgba(60,90,150,.10); }
+  .hm { aspect-ratio:1; border-radius:8px; background:#eef1f7; display:flex; align-items:center; justify-content:center; font-size:.68rem; color:#9aa3b5; font-weight:700; cursor:pointer; }
+  .hm.today { outline:2px solid #4f46e5; }
+  .hm.l1 { background:#cdeffd; color:#2b7fa8; }
+  .hm.l2 { background:#7ed0ff; color:#14537a; }
+  .hm.l3 { background:#3ec97e; color:#fff; }
+  .daydetail { background:#fff; border-radius:16px; padding:12px; margin-top:10px; box-shadow:0 4px 12px rgba(60,90,150,.10); display:none; }
+  .daydetail h4 { color:#4f46e5; font-size:.9rem; margin-bottom:6px; }
+  .ddline { display:flex; justify-content:space-between; font-size:.85rem; padding:5px 2px; border-bottom:1px dashed #eee; color:#556; }
+  .histlist { background:#fff; border-radius:16px; padding:12px; margin-top:12px; box-shadow:0 4px 12px rgba(60,90,150,.10); }
+  .histlist h3 { font-size:.9rem; color:#4f46e5; margin-bottom:6px; }
+  .histrow { display:flex; justify-content:space-between; font-size:.85rem; padding:5px 2px; border-bottom:1px dashed #eee; color:#556; }
+
+  /* 家长中心 */
+  .panel { background:#fff; border-radius:16px; padding:14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(60,90,150,.10); }
+  .panel h3 { font-size:.95rem; color:#4f46e5; margin-bottom:8px; }
+  .ptask { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px dashed #eee; font-size:.88rem; color:#444; flex-wrap:wrap; }
+  .ptask .pname { flex:1; min-width:110px; font-weight:700; }
+  .ptask input { width:52px; border:1px solid #dde; border-radius:8px; padding:4px 6px; text-align:center; font-size:.85rem; }
+  .ruleedit { width:100%; border:1px solid #dde; border-radius:10px; padding:7px 9px; font-size:.78rem; color:#556; margin-top:5px; font-family:inherit; }
+  .fld { width:100%; border:1px solid #dde; border-radius:10px; padding:9px 10px; font-size:.9rem; margin:4px 0; }
+  .row2 { display:flex; gap:8px; }
+  .row2 .fld { flex:1; }
+  .note { font-size:.75rem; color:#98a1b3; margin-top:6px; }
+  .childcard { background:#f8faff; border:1px solid #e3e9f8; border-radius:14px; padding:10px 12px; margin-bottom:10px; }
+  .childcard h4 { color:#333; font-size:.92rem; margin-bottom:6px; }
+  .statgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:.8rem; color:#556; }
+  .statgrid div { background:#fff; border-radius:10px; padding:6px 9px; border:1px solid #eef1f7; }
+  .statgrid b { color:#4f46e5; }
+
+  /* 底部导航 */
+  .nav { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; padding:10px; background:linear-gradient(180deg,transparent,#d9f6e8); z-index:30; }
+  .navbox { display:flex; gap:4px; background:#fff; border-radius:20px; padding:6px; box-shadow:0 6px 18px rgba(60,90,150,.25); }
+  .nbtn { border:none; background:transparent; border-radius:14px; padding:8px 14px; font-size:1.05rem; cursor:pointer; }
+  .nbtn.on { background:#eef0ff; }
+
+  /* 撒花 */
+  .confetti { position:fixed; top:-20px; font-size:1.2rem; z-index:99; pointer-events:none; animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(720deg); opacity:.7; } }
+
+  .toast { position:fixed; left:50%; top:18%; transform:translateX(-50%); background:#333c; color:#fff; padding:10px 18px; border-radius:14px; font-size:.9rem; font-weight:700; z-index:100; display:none; }
+
+  /* 引导浮层 */
+  .mask { position:fixed; inset:0; background:rgba(30,25,60,.55); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .guide { background:#fff; border-radius:22px; max-width:440px; width:100%; padding:24px 22px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .guide .gico { font-size:3rem; }
+  .guide h2 { font-size:1.1rem; color:#333; margin:8px 0; }
+  .guide p { font-size:.88rem; color:#667; line-height:1.7; text-align:left; }
+  .guide .steps { display:flex; justify-content:center; gap:6px; margin:14px 0 4px; }
+  .guide .steps i { width:8px; height:8px; border-radius:50%; background:#dde; }
+  .guide .steps i.on { background:#4f46e5; }
+  .gatebox { text-align:center; }
+  .gateq { font-size:1.6rem; font-weight:800; letter-spacing:.15em; color:#4f46e5; background:#f4f2ff; border-radius:14px; padding:14px; margin:10px 0; }
+  .gatebox input { width:130px; border:2px solid #4f46e5; border-radius:12px; padding:10px; font-size:1.2rem; text-align:center; }
+  .gatenote { font-size:.75rem; color:#98a1b3; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <h1>🏝️ 探险家打卡岛</h1>
+    <div class="sub">每天完成任务，收集积分和徽章，成为传奇探险家！</div>
+    <button class="help" id="helpBtn" title="使用说明">❓</button>
+    <div class="kids" id="kidChips"></div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="stPoints">0</div><div class="lbl">⭐ 总积分</div></div>
+      <div class="stat"><div class="num" id="stSpend">0</div><div class="lbl">💰 可兑换</div></div>
+      <div class="stat"><div class="num" id="stStreak">0</div><div class="lbl">🔥 连续天数</div></div>
+      <div class="stat"><div class="num" id="stDone">0/0</div><div class="lbl">✅ 今日完成</div></div>
+    </div>
+    <div class="lvwrap">
+      <div class="lvrow"><span id="lvName">🌱 起航者</span><span id="lvNext">距离下一级 100 分</span></div>
+      <div class="bar"><i id="lvBar" style="width:0%"></i></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-v="today">📋 今日打卡</button>
+    <button class="tab" data-v="badges">🏅 徽章奖励</button>
+    <button class="tab" data-v="history">📊 进度历史</button>
+    <button class="tab" data-v="parent">👨‍👩‍👦 家长中心</button>
+  </div>
+
+  <div id="view-today">
+    <div class="dateband" id="dateBand"></div>
+    <div id="taskList"></div>
+    <div class="alleffect" id="allDoneMsg"></div>
+    <div class="panel">
+      <h3>🎁 奖励商店（用可兑换积分换）</h3>
+      <div id="shopList"></div>
+      <div class="note">奖励规则见《五年级学习激励规划》：只按月兑换、不预支、不折现。</div>
+    </div>
+  </div>
+
+  <div id="view-badges" style="display:none">
+    <div class="panel"><h3>🏅 徽章墙（点亮全部徽章！）</h3><div class="badges" id="badgeWall"></div></div>
+    <div class="panel"><h3>🛡️ 等级之路</h3><div id="lvPath"></div></div>
+  </div>
+
+  <div id="view-history" style="display:none">
+    <div class="panel"><h3>📅 最近 5 周打卡热力图（点击日期看详情 / 家长可补记）</h3>
+      <div class="heatmap" id="heat"></div>
+      <div class="daydetail" id="dayDetail"></div>
+    </div>
+    <div class="histlist"><h3>📜 最近积分流水</h3><div id="logList"></div></div>
+  </div>
+
+  <div id="view-parent" style="display:none">
+    <div id="parentBody"></div>
+  </div>
+</div>
+
+<div class="nav"><div class="navbox">
+  <button class="nbtn on" data-v="today">📋</button>
+  <button class="nbtn" data-v="badges">🏅</button>
+  <button class="nbtn" data-v="history">📊</button>
+  <button class="nbtn" data-v="parent">👨‍👩‍👦</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<div id="guideRoot"></div>
+
+<script>
+"use strict";
+/* ================= 数据层：localStorage 持久化（v2 多孩子账户） ================= */
+const KEY = "explorer_island_v2";
+const AVATARS = ["🐯","🦁","🐼","🦊","🐨","🐸","🦖","🐬"];
+
+const DEFAULT_TASKS = [
+  { id:"t1", icon:"🏃", name:"户外运动 1 小时", pts:3, cat:"健康", active:true,
+    rule:"【打卡要求】户外活动累计满 1 小时（可分段累计，散步/球类/骑车均可）。\n【时间限制】当日完成，最晚记录到睡前；过期需家长在历史页补记。\n【积分计算】完成 +3 分；当天运动超过 1.5 小时，家长可补记加成一次 +2 分。" },
+  { id:"t2", icon:"🧮", name:"数学闯关（白银关以上）", pts:5, cat:"学习", active:true,
+    rule:"【打卡要求】完成当日数学闯关中白银关及以上共 2 道题；黄金关写出完整思路也算通关。\n【时间限制】当日 19:00–19:30 闯关时段内完成（特殊情况当晚补完）。\n【积分计算】通关 +5 分；仅完成青铜关 +2 分；周五 Boss 战全对 +8 分（家长补记）。" },
+  { id:"t3", icon:"📖", name:"阅读 20 分钟", pts:3, cat:"学习", active:true,
+    rule:"【打卡要求】自主阅读纸质书或电子书满 20 分钟，漫画刷视频不算。\n【时间限制】当日任意时段，建议睡前 21:00–21:30；\n【积分计算】完成 +3 分；读完并能口头复述 1 段内容，家长可补记 +2 分。" },
+  { id:"t4", icon:"🔤", name:"英语听读打卡", pts:3, cat:"学习", active:true,
+    rule:"【打卡要求】听读英语材料 15 分钟，并认读/抄写 3 个单词。\n【时间限制】当日任意时段完成。\n【积分计算】完成 +3 分；能完整朗读 1 篇短文，家长可补记 +2 分。" },
+  { id:"t5", icon:"🎓", name:"错题小老师讲解", pts:4, cat:"学习", active:true,
+    rule:"【打卡要求】选 1 道本周错题，向家长讲清「错在哪、正确思路是什么」。\n【时间限制】每晚 20:25–20:45 讲解时段。\n【积分计算】讲通 +4 分；讲解中途卡壳但认真重试，+2 分。" },
+  { id:"t6", icon:"🧹", name:"家庭责任任务", pts:3, cat:"责任", active:true,
+    rule:"【打卡要求】完成当日「家庭责任卡」分工中的 1 项（摆碗筷/倒垃圾/浇花等）。\n【时间限制】当日完成即可，饭后优先。\n【积分计算】完成 +3 分；主动多做 1 项，家长可补记 +2 分。" },
+  { id:"t7", icon:"🤝", name:"小组任务推进 1 步", pts:3, cat:"合作", active:false,
+    rule:"【打卡要求】推进小组任务 1 个明确步骤（收集资料/完成分工部分/联系队友），并在任务单记录。\n【时间限制】双周任务周期内当日完成。\n【积分计算】完成 +3 分；担任队长并组织推进，家长可补记 +2 分。" },
+];
+const DEFAULT_SHOP = [
+  { id:"s1", icon:"🎮", name:"周末活动决定权：全家去哪你说了算", cost:60 },
+  { id:"s2", icon:"📚", name:"自选一本书或一个模型", cost:120 },
+  { id:"s3", icon:"🎡", name:"大型体验：科技馆 / 露营 / 游乐园", cost:200 },
+  { id:"s4", icon:"🌙", name:"晚睡 30 分钟券（周末可用）", cost:30 },
+];
+
+function freshChild(id,name){ return { id, name, avatar:AVATARS[Math.floor(Math.random()*AVATARS.length)], records:{}, log:[], redemptions:[] }; }
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && d.tasks && d.data && d.children) return d;
+    if (d && d.tasks && d.records) { /* v1 旧数据迁移 */
+      const c = freshChild("c1","孩子");
+      c.records = d.records||{}; c.log = d.log||[]; c.redemptions = d.redemptions||[];
+      const d2 = { version:2, tasks:d.tasks, shop:d.shop||JSON.parse(JSON.stringify(DEFAULT_SHOP)),
+                   children:[c], currentChild:"c1", data:{ c1:c } };
+      localStorage.setItem(KEY, JSON.stringify(d2));
+      return d2;
+    }
+  } catch(e) {}
+  const c = freshChild("c1","孩子");
+  const d = { version:2, tasks:JSON.parse(JSON.stringify(DEFAULT_TASKS)), shop:JSON.parse(JSON.stringify(DEFAULT_SHOP)),
+              children:[c], currentChild:"c1", data:{ c1:c } };
+  localStorage.setItem(KEY, JSON.stringify(d));
+  return d;
+}
+let DB = load();
+function save(){ localStorage.setItem(KEY, JSON.stringify(DB)); }
+function CD(){ return DB.data[DB.currentChild]; }
+
+/* ================= 工具 ================= */
+const pad = n => String(n).padStart(2,"0");
+const dkey = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayKey = () => dkey(new Date());
+const WEEK = ["日","一","二","三","四","五","六"];
+function shiftDays(n){ const d=new Date(); d.setDate(d.getDate()+n); return dkey(d); }
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",1800); }
+function confetti(){
+  const icons=["🎉","⭐","🎈","🏆","💛","✨"];
+  for(let i=0;i<26;i++){
+    const s=document.createElement("div"); s.className="confetti";
+    s.textContent=icons[i%icons.length];
+    s.style.left=Math.random()*100+"vw";
+    s.style.animationDuration=(2+Math.random()*2)+"s";
+    s.style.animationDelay=(Math.random()*0.5)+"s";
+    document.body.appendChild(s); setTimeout(()=>s.remove(),4500);
+  }
+}
+/* 阿拉伯数字 → 大写数字（1–99，用于家长门禁题） */
+function numCN(n){
+  const D=["零","壹","贰","叁","肆","伍","陆","柒","捌","玖"];
+  if(n<10) return D[n];
+  const t=Math.floor(n/10), o=n%10;
+  let s = t>1 ? D[t]+"拾" : "拾";
+  if(o) s += D[o];
+  return s;
+}
+
+/* ================= 统计（基于当前孩子） ================= */
+function totalPoints(cd){ let s=0; for(const dk in cd.records) for(const tid in cd.records[dk]) if(cd.records[dk][tid]){ const t=DB.tasks.find(x=>x.id===tid); if(t) s+=t.pts; } return s; }
+function redeemed(cd){ return cd.redemptions.reduce((a,r)=>a+r.cost,0); }
+function countChecks(cd){ let n=0; for(const dk in cd.records) for(const tid in cd.records[dk]) if(cd.records[dk][tid]) n++; return n; }
+function countDays(cd){ let n=0; for(const dk in cd.records) if(Object.values(cd.records[dk]).some(Boolean)) n++; return n; }
+function taskTotal(cd,tid){ let n=0; for(const dk in cd.records) if(cd.records[dk][tid]) n++; return n; }
+const LEVELS=[{n:"🌱 起航者",p:0},{n:"🧭 探索者",p:100},{n:"⛰️ 登山者",p:300},{n:"⚔️ 勇士",p:600},{n:"🏆 大冒险家",p:1000},{n:"👑 传奇探险家",p:2000}];
+function levelOf(pts){ let i=0; for(let k=0;k<LEVELS.length;k++) if(pts>=LEVELS[k].p) i=k; return i; }
+function streakDays(cd){
+  let s=0, i=0;
+  while(i<400){
+    const dk=shiftDays(-i), r=cd.records[dk];
+    if(r && Object.values(r).some(Boolean)) s++; else if(i>0) break;
+    i++;
+  }
+  return s;
+}
+function taskStreak(cd,tid){ let s=0; for(let i=0;i<400;i++){ const r=cd.records[shiftDays(-i)]; if(r&&r[tid]) s++; else break; } return s; }
+function bestStreak(cd){
+  let best=0,cur=0;
+  for(let i=400;i>=0;i--){ const r=cd.records[shiftDays(-i)];
+    if(r&&Object.values(r).some(Boolean)){cur++;best=Math.max(best,cur);} else cur=0; }
+  return best;
+}
+
+/* ================= 徽章 ================= */
+function badgeList(){
+  const cd=CD(), tp=totalPoints(cd), st=streakDays(cd);
+  const dayAll = (()=>{ const r=cd.records[todayKey()], act=DB.tasks.filter(t=>t.active); return r&&act.length&&act.every(t=>r[t.id]); })();
+  const bs = bestStreak(cd);
+  return [
+    {icon:"🌟",name:"首次打卡",cond:"完成第 1 次打卡",ok:tp>0},
+    {icon:"🔥",name:"三日之约",cond:"连续打卡 3 天",ok:bs>=3},
+    {icon:"⚡",name:"一周连击",cond:"连续打卡 7 天",ok:bs>=7},
+    {icon:"🌋",name:"三周远征",cond:"连续打卡 21 天",ok:bs>=21},
+    {icon:"🚀",name:"五十天传奇",cond:"连续打卡 50 天",ok:bs>=50},
+    {icon:"💯",name:"今日全勤",cond:"今天全部任务完成",ok:dayAll},
+    {icon:"🪙",name:"百分俱乐部",cond:"累计积分达 100",ok:tp>=100},
+    {icon:"💎",name:"五百大户",cond:"累计积分达 500",ok:tp>=500},
+    {icon:"👑",name:"千分王者",cond:"累计积分达 1000",ok:tp>=1000},
+    {icon:"🧹",name:"责任小管家",cond:"责任任务连续 7 天",ok:taskStreak(cd,"t6")>=7},
+    {icon:"📖",name:"阅读之星",cond:"阅读连续 7 天",ok:taskStreak(cd,"t3")>=7},
+    {icon:"🏃",name:"运动健将",cond:"运动连续 7 天",ok:taskStreak(cd,"t1")>=7},
+  ];
+}
+
+/* ================= 渲染：顶部（含孩子切换） ================= */
+function renderHero(){
+  const cd=CD(), tp=totalPoints(cd), rd=redeemed(cd), st=streakDays(cd);
+  const r=cd.records[todayKey()], act=DB.tasks.filter(t=>t.active);
+  const done=act.filter(t=>r&&r[t.id]).length;
+  document.getElementById("stPoints").textContent=tp;
+  document.getElementById("stSpend").textContent=Math.max(0,tp-rd);
+  document.getElementById("stStreak").textContent=st;
+  document.getElementById("stDone").textContent=done+"/"+act.length;
+  const chips=document.getElementById("kidChips"); chips.innerHTML="";
+  DB.children.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="kidchip"+(c.id===DB.currentChild?" on":"");
+    b.textContent=c.avatar+" "+c.name;
+    b.onclick=()=>{ DB.currentChild=c.id; save(); renderAll(); toast("已切换到 "+c.name+" 的岛屿"); };
+    chips.appendChild(b);
+  });
+  const li=levelOf(tp), cur=LEVELS[li], nxt=LEVELS[li+1];
+  document.getElementById("lvName").textContent=cd.avatar+" "+cd.name+" · "+cur.n;
+  if(nxt){
+    document.getElementById("lvNext").textContent="距离 "+nxt.n+" 还差 "+(nxt.p-tp)+" 分";
+    document.getElementById("lvBar").style.width=Math.min(100,Math.round((tp-cur.p)/(nxt.p-cur.p)*100))+"%";
+  } else { document.getElementById("lvNext").textContent="已达最高等级！"; document.getElementById("lvBar").style.width="100%"; }
+}
+
+/* ================= 渲染：今日 ================= */
+function renderToday(){
+  const d=new Date();
+  document.getElementById("dateBand").textContent=`今天是 ${d.getMonth()+1} 月 ${d.getDate()} 日 星期${WEEK[d.getDay()]} · 点击卡片打卡 · ℹ️ 看规则`;
+  const cd=CD();
+  const tk=todayKey(); if(!cd.records[tk]) cd.records[tk]={};
+  const rec=cd.records[tk];
+  const box=document.getElementById("taskList"); box.innerHTML="";
+  DB.tasks.filter(t=>t.active).forEach(t=>{
+    const done=!!rec[t.id];
+    const el=document.createElement("div");
+    el.className="task"+(done?" done":"");
+    el.innerHTML=`<div class="ico">${t.icon}</div>
+      <div class="info"><div class="name">${t.name}</div>
+      <div class="meta">${t.cat} · 连续 ${taskStreak(cd,t.id)} 天 ${done?"· 已完成 ✓":""}</div></div>
+      <div class="pts">+${t.pts}分</div>
+      <button class="rulebtn" title="规则说明">ℹ️</button>
+      <div class="check">${done?"✓":""}</div>`;
+    el.onclick=()=>toggleTask(t.id);
+    el.querySelector(".rulebtn").onclick=(e)=>{
+      e.stopPropagation();
+      const old=document.getElementById("rule-"+t.id);
+      if(old){ old.remove(); return; }
+      document.querySelectorAll(".rulebox").forEach(x=>x.remove());
+      const rb=document.createElement("div");
+      rb.className="rulebox"; rb.id="rule-"+t.id;
+      rb.innerHTML=t.rule.replace(/\n/g,"<br>");
+      el.after(rb);
+    };
+    box.appendChild(el);
+  });
+  const act=DB.tasks.filter(t=>t.active);
+  const all=act.length&&act.every(t=>rec[t.id]);
+  document.getElementById("allDoneMsg").textContent=all?"🎉 今日全部完成！太棒了，"+CD().name+"！":"";
+  renderShop();
+}
+function toggleTask(tid){
+  const cd=CD();
+  const tk=todayKey(); if(!cd.records[tk]) cd.records[tk]={};
+  const rec=cd.records[tk];
+  const t=DB.tasks.find(x=>x.id===tid);
+  rec[tid]=!rec[tid];
+  if(rec[tid]){
+    cd.log.unshift({date:tk,reason:"完成："+t.icon+t.name,delta:+t.pts});
+    const act=DB.tasks.filter(x=>x.active);
+    if(act.every(x=>rec[x.id])){ confetti(); toast("🎉 今日全勤 +元气满满！"); }
+    else toast("⭐ +"+t.pts+" 分！");
+  } else {
+    cd.log.unshift({date:tk,reason:"取消："+t.name,delta:-t.pts});
+  }
+  if(cd.log.length>300) cd.log.length=300;
+  save(); renderAll();
+}
+
+/* ================= 渲染：商店 ================= */
+function renderShop(){
+  const cd=CD();
+  const tp=totalPoints(cd), rd=redeemed(cd), spend=Math.max(0,tp-rd);
+  const box=document.getElementById("shopList"); box.innerHTML="";
+  DB.shop.forEach(s=>{
+    const afford=spend>=s.cost;
+    const el=document.createElement("div"); el.className="shopitem";
+    el.innerHTML=`<div class="sico">${s.icon}</div>
+      <div class="sinfo"><div class="sname">${s.name}</div><div class="scost">需要 ${s.cost} 分</div></div>`;
+    const btn=document.createElement("button");
+    btn.className="btn "+(afford?"btn-buy":"btn-ghost");
+    btn.textContent=afford?"兑换":"积分不足";
+    btn.disabled=!afford;
+    btn.onclick=()=>{
+      if(!confirm(`确定用 ${s.cost} 分兑换「${s.name}」吗？`)) return;
+      cd.redemptions.unshift({date:todayKey(),name:s.name,cost:s.cost});
+      cd.log.unshift({date:todayKey(),reason:"兑换："+s.name,delta:-s.cost});
+      save(); renderAll(); confetti(); toast("🎁 兑换成功，记得找爸妈兑现哦！");
+    };
+    el.appendChild(btn); box.appendChild(el);
+  });
+}
+
+/* ================= 渲染：徽章 ================= */
+function renderBadges(){
+  const wall=document.getElementById("badgeWall"); wall.innerHTML="";
+  badgeList().forEach(b=>{
+    const el=document.createElement("div");
+    el.className="badge"+(b.ok?"":" locked");
+    el.innerHTML=`<div class="bico">${b.icon}</div><div class="bname">${b.name}</div><div class="bcond">${b.cond}</div>`;
+    wall.appendChild(el);
+  });
+  const tp=totalPoints(CD());
+  const path=document.getElementById("lvPath"); path.innerHTML="";
+  LEVELS.forEach((lv,i)=>{
+    const got=tp>=lv.p;
+    const row=document.createElement("div"); row.className="ddline";
+    row.innerHTML=`<span>${got?"✅":"⬜"} ${lv.n}</span><span>${lv.p} 分${i===levelOf(tp)?"（当前等级）":""}</span>`;
+    path.appendChild(row);
+  });
+}
+
+/* ================= 渲染：历史 ================= */
+function renderHistory(){
+  const cd=CD();
+  const heat=document.getElementById("heat"); heat.innerHTML="";
+  const d=new Date(); const dow=d.getDay();
+  const start=new Date(d); start.setDate(d.getDate()-dow-28);
+  for(let i=0;i<35;i++){
+    const dd=new Date(start); dd.setDate(start.getDate()+i);
+    const dk=dkey(dd);
+    const rec=cd.records[dk];
+    const act=DB.tasks.filter(t=>t.active);
+    let cls="";
+    if(rec){ const c=act.filter(t=>rec[t.id]).length;
+      if(c>0&&c<act.length*0.5) cls="l1";
+      else if(c>=act.length*0.5&&c<act.length) cls="l2";
+      else if(c>=act.length&&act.length) cls="l3"; }
+    const cell=document.createElement("div");
+    cell.className="hm "+cls+(dk===todayKey()?" today":"");
+    cell.textContent=dd.getDate();
+    cell.title=dk;
+    cell.onclick=()=>showDay(dk);
+    heat.appendChild(cell);
+  }
+  const log=document.getElementById("logList"); log.innerHTML="";
+  if(!cd.log.length) log.innerHTML='<div class="ddline"><span>还没有记录，去打卡吧！</span></div>';
+  cd.log.slice(0,20).forEach(l=>{
+    const row=document.createElement("div"); row.className="histrow";
+    row.innerHTML=`<span>${l.date} · ${l.reason}</span><span style="color:${l.delta>=0?"#0e9a5b":"#c0392b"};font-weight:700">${l.delta>=0?"+":""}${l.delta}</span>`;
+    log.appendChild(row);
+  });
+  showDay(todayKey());
+}
+function showDay(dk){
+  const cd=CD();
+  const box=document.getElementById("dayDetail");
+  box.style.display="block";
+  const rec=cd.records[dk]||{};
+  let html=`<h4>${dk}（${WEEK[new Date(dk.replace(/-/g,"/")).getDay()]}）<span style="font-weight:400;font-size:.72rem"> 家长点击可补记/取消</span></h4>`;
+  DB.tasks.forEach(t=>{
+    const on=!!rec[t.id];
+    html+=`<div class="ddline"><span style="cursor:pointer" onclick="fixRecord('${dk}','${t.id}')">${on?"✅":"⬜"} ${t.icon} ${t.name}</span><span>${t.pts}分</span></div>`;
+  });
+  box.innerHTML=html;
+}
+window.fixRecord=function(dk,tid){
+  const cd=CD();
+  if(!cd.records[dk]) cd.records[dk]={};
+  const t=DB.tasks.find(x=>x.id===tid);
+  cd.records[dk][tid]=!cd.records[dk][tid];
+  cd.log.unshift({date:dk,reason:(cd.records[dk][tid]?"补记：":"取消补记：")+t.name,delta:cd.records[dk][tid]?+t.pts:-t.pts});
+  if(cd.log.length>300) cd.log.length=300;
+  save(); renderAll(); toast("已更新 "+dk);
+};
+
+/* ================= 家长中心（大写数字门禁） ================= */
+let parentOK=false, gateA=0, gateB=0;
+function renderParent(){
+  const body=document.getElementById("parentBody");
+  if(!parentOK){
+    gateA=11+Math.floor(Math.random()*58); gateB=11+Math.floor(Math.random()*38);
+    body.innerHTML=`<div class="panel gatebox"><h3>👨‍👩‍👦 家长验证</h3>
+      <p style="font-size:.85rem;color:#667">请家长计算下面的大写数字算术题：</p>
+      <div class="gateq">${numCN(gateA)} ＋ ${numCN(gateB)} ＝ ？</div>
+      <input id="gateIn" type="number" inputmode="numeric" /><br/><br/>
+      <button class="btn btn-blue" onclick="gateCheck()">进入家长中心</button>
+      <div class="gatenote">大写数字对照：壹1 · 贰2 · 叁3 · 肆4 · 伍5 · 陆6 · 柒7 · 捌8 · 玖9 · 拾10</div></div>`;
+    return;
+  }
+  body.innerHTML=`
+  <div class="panel"><h3>👧👦 孩子成就档案（按孩子分开展示）</h3><div id="pChildren"></div>
+    <div class="row2" style="margin-top:8px">
+      <button class="btn btn-blue" onclick="addChild()">➕ 添加孩子</button>
+      <button class="btn btn-ghost" onclick="renameChild()">✏️ 重命名当前选中孩子</button>
+    </div>
+    <div class="note">下方任务管理、备份等功能为全家共用；打卡记录、积分、徽章按孩子分开统计。</div>
+  </div>
+  <div class="panel"><h3>⚙️ 任务管理与规则说明</h3><div id="pTasks"></div>
+    <div class="row2" style="margin-top:8px">
+      <input class="fld" id="newName" placeholder="新任务名称，如：练琴 20 分钟" />
+      <input class="fld" style="flex:0 0 70px" id="newPts" type="number" value="3" min="1" />
+    </div>
+    <input class="fld" id="newRule" placeholder="规则说明（打卡要求 / 时间限制 / 积分计算），可留空" />
+    <button class="btn btn-blue" style="margin-top:6px" onclick="addTask()">➕ 添加任务</button>
+    <div class="note">「规则」框修改后自动保存，孩子在打卡页点 ℹ️ 即可查看；点击「隐藏/显示」控制任务是否出现。</div>
+  </div>
+  <div class="panel"><h3>🎁 奖励商店管理</h3><div id="pShop"></div>
+    <div class="row2" style="margin-top:8px">
+      <input class="fld" id="newReward" placeholder="新奖励名称" />
+      <input class="fld" style="flex:0 0 70px" id="newCost" type="number" value="60" min="1" />
+    </div>
+    <button class="btn btn-blue" style="margin-top:6px" onclick="addReward()">➕ 添加奖励</button>
+  </div>
+  <div class="panel"><h3>💾 数据备份（换手机/清浏览器前必看）</h3>
+    <button class="btn btn-blue" onclick="exportData()">⬇️ 导出备份文件</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('impFile').click()">⬆️ 导入备份</button>
+    <input type="file" id="impFile" accept=".json" style="display:none" onchange="importData(event)" />
+    <div class="note">打卡数据保存在本机浏览器中，长期有效；建议每月导出一次 JSON 备份防止误清缓存。</div>
+  </div>
+  <div class="panel"><h3>❓ 新手引导重播</h3>
+    <button class="btn btn-ghost" onclick="startGuide(true)">▶️ 重新播放使用说明</button>
+  </div>
+  <div class="panel"><h3>🧹 维护</h3>
+    <button class="btn btn-danger" onclick="resetAll()">🗑️ 清空全部数据（慎用，需二次确认）</button>
+  </div>`;
+  renderPChildren(); renderPTasks(); renderPShop();
+}
+function gateCheck(){
+  const v=parseInt(document.getElementById("gateIn").value,10);
+  if(v===gateA+gateB){ parentOK=true; renderParent(); toast("验证通过，欢迎家长～"); }
+  else toast("答案不对哦，请家长本人操作～");
+}
+function renderPChildren(){
+  const box=document.getElementById("pChildren"); box.innerHTML="";
+  DB.children.forEach(c=>{
+    const d=DB.data[c.id];
+    const el=document.createElement("div"); el.className="childcard";
+    const sel=c.id===DB.currentChild;
+    let taskLines="";
+    DB.tasks.forEach(t=>{
+      const n=taskTotal(d,t.id);
+      if(n>0) taskLines+=`<div>${t.icon} ${t.name}<br><b>${n} 次</b></div>`;
+    });
+    el.innerHTML=`<h4>${c.avatar} ${c.name}${sel?' <span style="color:#4f46e5;font-size:.75rem">（当前打卡中）</span>':""}</h4>
+      <div class="statgrid">
+        <div>累计打卡次数<br><b>${countChecks(d)} 次</b></div>
+        <div>累计打卡天数<br><b>${countDays(d)} 天</b></div>
+        <div>当前连续打卡<br><b>${streakDays(d)} 天</b>（历史最长 ${bestStreak(d)} 天）</div>
+        <div>总积分 / 可兑换<br><b>${totalPoints(d)} / ${Math.max(0,totalPoints(d)-redeemed(d))} 分</b></div>
+        <div>已兑换奖励<br><b>${redeemed(d)} 分 · ${d.redemptions.length} 次</b></div>
+        <div>完成徽章<br><b>${badgeListOf(d).filter(b=>b.ok).length} / 12 枚</b></div>
+        ${taskLines}
+      </div>
+      ${d.redemptions.length?`<div class="note">最近兑换：${d.redemptions.slice(0,3).map(r=>r.date+" "+r.name).join("；")}</div>`:""}`;
+    box.appendChild(el);
+  });
+}
+function badgeListOf(cd){
+  const tp=totalPoints(cd), bs=bestStreak(cd);
+  const dayAll=(()=>{ const r=cd.records[todayKey()], act=DB.tasks.filter(t=>t.active); return r&&act.length&&act.every(t=>r[t.id]); })();
+  return [
+    {ok:tp>0},{ok:bs>=3},{ok:bs>=7},{ok:bs>=21},{ok:bs>=50},{ok:dayAll},
+    {ok:tp>=100},{ok:tp>=500},{ok:tp>=1000},
+    {ok:taskStreak(cd,"t6")>=7},{ok:taskStreak(cd,"t3")>=7},{ok:taskStreak(cd,"t1")>=7},
+  ];
+}
+function addChild(){
+  const name=prompt("新孩子的名字：");
+  if(!name||!name.trim()) return;
+  const id="c"+Date.now();
+  const c=freshChild(id,name.trim());
+  DB.children.push(c); DB.data[id]=c; DB.currentChild=id;
+  save(); renderAll(); toast("已添加 "+c.name+"，专属小岛开张！");
+}
+function renameChild(){
+  const c=DB.children.find(x=>x.id===DB.currentChild);
+  const name=prompt("输入新名字（当前："+c.name+"）：",c.name);
+  if(!name||!name.trim()) return;
+  c.name=name.trim(); save(); renderAll(); toast("已改名");
+}
+function renderPTasks(){
+  const box=document.getElementById("pTasks"); box.innerHTML="";
+  DB.tasks.forEach(t=>{
+    const el=document.createElement("div"); el.className="ptask";
+    el.innerHTML=`<span style="font-size:1.3rem">${t.icon}</span><span class="pname">${t.name} <small style="color:#98a1b3">(${t.cat})</small></span>
+      <input type="number" value="${t.pts}" min="1" title="分数" />`;
+    const ptsIn=el.querySelector("input");
+    ptsIn.onchange=()=>{ t.pts=Math.max(1,parseInt(ptsIn.value)||1); save(); renderAll(); };
+    const b1=document.createElement("button"); b1.className="mini "+(t.active?"btn-ok":"btn-ghost");
+    b1.textContent=t.active?"显示中·点击隐藏":"已隐藏·点击显示";
+    b1.onclick=()=>{ t.active=!t.active; save(); renderAll(); };
+    const b2=document.createElement("button"); b2.className="mini btn-danger"; b2.textContent="删除";
+    b2.onclick=()=>{ if(confirm("删除任务「"+t.name+"」？")){ DB.tasks=DB.tasks.filter(x=>x.id!==t.id); save(); renderAll(); } };
+    el.appendChild(b1); el.appendChild(b2);
+    const re=document.createElement("textarea");
+    re.className="ruleedit"; re.rows=3; re.value=t.rule||"";
+    re.placeholder="规则说明：打卡要求 / 时间限制 / 积分计算";
+    re.onchange=()=>{ t.rule=re.value; save(); toast("规则已保存"); };
+    el.appendChild(re);
+    box.appendChild(el);
+  });
+}
+function renderPShop(){
+  const box=document.getElementById("pShop"); box.innerHTML="";
+  DB.shop.forEach(s=>{
+    const el=document.createElement("div"); el.className="ptask";
+    el.innerHTML=`<span style="font-size:1.3rem">${s.icon}</span><span class="pname">${s.name}</span><b>${s.cost}分</b>`;
+    const b=document.createElement("button"); b.className="mini btn-danger"; b.textContent="删除";
+    b.onclick=()=>{ DB.shop=DB.shop.filter(x=>x.id!==s.id); save(); renderAll(); };
+    el.appendChild(b); box.appendChild(el);
+  });
+}
+function addTask(){
+  const name=document.getElementById("newName").value.trim();
+  const pts=Math.max(1,parseInt(document.getElementById("newPts").value)||1);
+  const rule=document.getElementById("newRule").value.trim();
+  if(!name){ toast("请先填写任务名称"); return; }
+  DB.tasks.push({id:"t"+Date.now(),icon:"✨",name,pts,cat:"自定义",active:true,
+    rule:rule||"【打卡要求】待补充。\n【时间限制】当日完成。\n【积分计算】完成 +"+pts+" 分。"});
+  save(); renderAll(); toast("任务已添加");
+}
+function addReward(){
+  const name=document.getElementById("newReward").value.trim();
+  const cost=Math.max(1,parseInt(document.getElementById("newCost").value)||60);
+  if(!name){ toast("请先填写奖励名称"); return; }
+  DB.shop.push({id:"s"+Date.now(),icon:"🎁",name,cost});
+  save(); renderAll(); toast("奖励已添加");
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="探险家打卡岛备份-"+todayKey()+".json"; a.click();
+}
+function importData(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{
+    const d=JSON.parse(rd.result);
+    if(!d.tasks||!d.data) throw 0;
+    if(confirm("导入将覆盖当前全部数据，确定吗？")){ DB=d; save(); renderAll(); toast("导入成功"); }
+  }catch(e){ toast("文件格式不对，导入失败"); } };
+  rd.readAsText(f); ev.target.value="";
+}
+function resetAll(){
+  if(confirm("确定清空全部打卡数据吗？此操作不可恢复！")){
+    if(confirm("再次确认：真的要清空吗？建议先导出备份！")){
+      localStorage.removeItem(KEY); DB=load(); parentOK=false; renderAll(); toast("已清空");
+    }
+  }
+}
+
+/* ================= 新手引导 ================= */
+const GUIDE_STEPS=[
+  {ico:"🏝️",t:"欢迎来到探险家打卡岛！",p:"孩子每天完成任务后，在「今日打卡」页<b>点一下卡片</b>就完成打卡。点卡片上的 <b>ℹ️</b> 可以看这项任务的详细规则：打卡要求、时间限制和积分算法。"},
+  {ico:"⭐",t:"积分 · 等级 · 徽章",p:"每次打卡获得积分，积分会点亮等级（起航者→传奇探险家）和 12 枚徽章；顶部还有「🔥连续打卡天数」，坚持得越久，徽章越多。"},
+  {ico:"🎁",t:"奖励商店怎么用",p:"攒够「可兑换积分」就能在商店点兑换（比如 60 分换周末出游决定权）。规则：<b>只按月兑换、不预支、不折现</b>，兑换后记得找爸妈当场兑现哦。"},
+  {ico:"👨‍👩‍👦",t:"家长中心",p:"右下角进入家长中心，需回答一道<b>大写数字算术题</b>（壹=1、贰=2、叁=3…）防止孩子自行修改。里面可以：按孩子查看成就档案、增删任务和规则、管理奖励、导出备份。"},
+  {ico:"💾",t:"数据安全",p:"打卡记录保存在<b>本设备的浏览器</b>里，关掉网页不会丢；换手机或清理浏览器前，请先在家长中心「导出备份」。<br><br>两个以上的孩子？家长可添加孩子账户，打卡和积分各自独立。"},
+];
+let guideIdx=0, guideTemp=false;
+function startGuide(replay){
+  guideIdx=0; guideTemp=!!replay;
+  showGuide();
+}
+function showGuide(){
+  const s=GUIDE_STEPS[guideIdx];
+  const root=document.getElementById("guideRoot");
+  root.innerHTML=`<div class="mask"><div class="guide">
+    <div class="gico">${s.ico}</div><h2>${s.t}</h2><p>${s.p}</p>
+    <div class="steps">${GUIDE_STEPS.map((_,i)=>`<i class="${i===guideIdx?"on":""}"></i>`).join("")}</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+      ${guideIdx>0?'<button class="btn btn-ghost" onclick="guideNav(-1)">上一步</button>':""}
+      <button class="btn btn-blue" onclick="guideNav(1)">${guideIdx<GUIDE_STEPS.length-1?"下一步":"开始冒险！"}</button>
+      ${guideIdx===0?'<button class="btn btn-ghost" onclick="guideClose()">跳过</button>':""}
+    </div></div></div>`;
+}
+function guideNav(d){
+  guideIdx+=d;
+  if(guideIdx>=GUIDE_STEPS.length) guideClose();
+  else showGuide();
+}
+function guideClose(){
+  document.getElementById("guideRoot").innerHTML="";
+  try{ localStorage.setItem("explorer_guide_seen","1"); }catch(e){}
+  toast("祝探险愉快！点击右上角 ❓ 可随时回看说明");
+}
+document.getElementById("helpBtn").onclick=()=>startGuide(true);
+if(!localStorage.getItem("explorer_guide_seen")) startGuide(false);
+
+/* ================= 视图切换 ================= */
+function showView(v){
+  ["today","badges","history","parent"].forEach(x=>{
+    document.getElementById("view-"+x).style.display = x===v?"block":"none";
+  });
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.v===v));
+  document.querySelectorAll(".nbtn").forEach(t=>t.classList.toggle("on",t.dataset.v===v));
+  if(v==="parent") renderParent();
+}
+document.querySelectorAll(".tab,.nbtn").forEach(b=>b.onclick=()=>showView(b.dataset.v));
+
+function renderAll(){ renderHero(); renderToday(); renderBadges(); renderHistory(); if(parentOK) renderParent(); }
+renderAll();
+</script>
+</body>
+</html>
